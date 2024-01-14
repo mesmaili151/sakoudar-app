@@ -1,0 +1,122 @@
+app Sakoudar {
+  wasp: {
+    version: "^0.11.4"
+  },
+  title: "Sakoudar",
+  client: {
+    rootComponent: import { Layout } from "@client/Layout.jsx"
+  },
+  db: {
+    prisma: {
+      clientPreviewFeatures: ["extendedWhereUnique"]
+    }
+  },
+  auth: {
+    userEntity: User,
+    methods: {
+      usernameAndPassword: {}
+    },
+    onAuthFailedRedirectTo: "/login",
+    onAuthSucceededRedirectTo: "/"
+  }
+}
+
+route LoginRoute { path: "/login", to: LoginPage }
+page LoginPage {
+  component: import Login from "@client/pages/auth/Login.jsx"
+}
+route SignupRoute { path: "/signup", to: SignupPage }
+page SignupPage {
+  component: import Signup from "@client/pages/auth/Signup.jsx"
+}
+
+entity User {=psl
+    id        Int        @id @default(autoincrement())
+    username  String     @unique
+    password  String
+    campaigns Campaign[]
+psl=}
+
+entity Campaign {=psl
+    id           Int        @id @default(autoincrement())
+    platform     String
+    influencer   Influencer @relation(fields: [influencerId], references: [id])
+    influencerId Int
+    user         User       @relation(fields: [userId], references: [id])
+    userId       Int
+    Payout       Payout[]
+psl=}
+
+entity Influencer {=psl
+    id        Int        @id @default(autoincrement())
+    name      String
+    platform  String
+    campaigns Campaign[]
+psl=}
+
+entity Payout {=psl
+    id         Int      @id @default(autoincrement())
+    amount     Float
+    campaign   Campaign @relation(fields: [campaignId], references: [id])
+    campaignId Int
+psl=}
+
+action createCampaign {
+  fn: import { createCampaign } from "@server/actions.js",
+  entities: [Campaign, User]
+}
+
+action createPayout {
+  fn: import { createPayout } from "@server/actions.js",
+  entities: [Payout, Campaign]
+}
+
+query getUser {
+  fn: import { getUser } from "@server/queries.js",
+  entities: [User, Campaign]
+}
+
+query getInfluencers {
+  fn: import { getInfluencers } from "@server/queries.js",
+  entities: [Influencer]
+}
+
+query getCampaigns {
+  fn: import { getCampaigns } from "@server/queries.js",
+  entities: [Campaign, User]
+}
+
+query getPayouts {
+  fn: import { getPayouts } from "@server/queries.js",
+  entities: [Payout, Campaign, User]
+}
+
+route DashboardRoute { path: "/dashboard", to: DashboardPage }
+page DashboardPage {
+  component: import { DashboardPage } from "@client/DashboardPage.jsx",
+  authRequired: true
+}
+
+route NewCampaignRoute { path: "/new-campaign", to: NewCampaignPage }
+page NewCampaignPage {
+  component: import { NewCampaign } from "@client/NewCampaign.jsx",
+  authRequired: true
+}
+
+route InfluencersRoute { path: "/influencers", to: InfluencersPage }
+page InfluencersPage {
+  component: import { Influencers } from "@client/Influencers.jsx",
+  authRequired: true
+}
+
+route CampaignsRoute { path: "/campaigns", to: CampaignsPage }
+page CampaignsPage {
+  component: import { Campaigns } from "@client/Campaigns.jsx",
+  authRequired: true
+}
+
+route PayoutsRoute { path: "/payouts", to: PayoutsPage }
+page PayoutsPage {
+  component: import { Payouts } from "@client/Payouts.jsx",
+  authRequired: true
+}
